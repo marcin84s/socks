@@ -3,12 +3,12 @@
 # socks
 socks4 proxy implemented with netty
 
-###build
+### build
 ```
 mvn package
 ```
 
-###start
+### start
 ```
 mvn exec:java -Dexec.args="9999"
 ```
