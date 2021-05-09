@@ -1,28 +1,35 @@
 package com.github.marcin84s;
 
-import com.github.marcin84s.handler.Socks4ConnectRequestDecoder;
-import com.github.marcin84s.handler.Socks4ConnectResponseHandler;
 import com.github.marcin84s.netty.Netty;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.logging.LoggingHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.*;
-import java.nio.charset.StandardCharsets;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.junit.Assert.assertEquals;
 
 public class Socks4ConnectTest {
 
     @Rule
     public final WireMockRule wiremock = new WireMockRule(8080);
+
+    @BeforeClass
+    public static void beforeClass() throws InterruptedException {
+        Netty.createSocks4Proxy(4321).sync();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Netty.shutdownWorker();
+    }
 
     @Test
     public void socks4connectShouldWork() throws InterruptedException, IOException {
@@ -31,8 +38,6 @@ public class Socks4ConnectTest {
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "text/plain")
                         .withBody("Success")));
-
-        Netty.createSocks4Proxy(4321).sync();
 
         // WHEN
         System.setProperty("socksProxyVersion", "4");
@@ -46,7 +51,32 @@ public class Socks4ConnectTest {
         byte[] bytes = httpURLConnection.getInputStream().readAllBytes();
         String responseBody = new String(bytes);
         httpURLConnection.disconnect();
-        Netty.shutdownWorker();
+
+        // THEN
+        assertEquals(200, responseCode);
+        assertEquals("Success", responseBody);
+    }
+
+    @Test
+    public void socks4connectShouldWorkAfterDowngradeFrom5() throws InterruptedException, IOException {
+        // GIVEN
+        stubFor(get(urlEqualTo("/testSocks4Downgrade"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "text/plain")
+                        .withBody("Success")));
+
+        // WHEN
+        System.clearProperty("socksProxyVersion");
+        Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", 4321));
+
+        URL url = new URL("http://localhost:8080/testSocks4Downgrade");
+        HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection(proxy);
+        httpURLConnection.connect();
+
+        int responseCode = httpURLConnection.getResponseCode();
+        byte[] bytes = httpURLConnection.getInputStream().readAllBytes();
+        String responseBody = new String(bytes);
+        httpURLConnection.disconnect();
 
         // THEN
         assertEquals(200, responseCode);

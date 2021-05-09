@@ -1,5 +1,8 @@
 package com.github.marcin84s.handler;
 
+import com.github.marcin84s.handler.msgs.Socks4ConnectNotSupportedVersion5;
+import com.github.marcin84s.handler.msgs.Socks4ConnectReject;
+import com.github.marcin84s.handler.msgs.Socks4ConnectRequest;
 import com.github.marcin84s.netty.Netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
@@ -49,9 +52,18 @@ public class Socks4ConnectResponseHandler extends ChannelOutboundHandlerAdapter 
         } else if (msg instanceof Socks4ConnectReject) {
             sendResponse(ctx, null, REPLY_COMMAND_REJECTED);
             ctx.close();
+        } else if (msg instanceof Socks4ConnectNotSupportedVersion5) {
+            sendResponse(ctx, REPLY_COMMAND_REJECTED);
         } else {
             ctx.fireChannelRead(msg);
         }
+    }
+
+    private void sendResponse(ChannelHandlerContext ctx, byte command) {
+        ByteBuf out = ctx.alloc().ioBuffer();
+        out.writeByte(0);
+        out.writeByte(command);
+        ctx.writeAndFlush(out);
     }
 
     private void sendResponse(ChannelHandlerContext ctx, Socks4ConnectRequest connectRequest, byte command) {

@@ -1,4 +1,4 @@
-package com.github.marcin84s.handler;
+package com.github.marcin84s.handler.msgs;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 

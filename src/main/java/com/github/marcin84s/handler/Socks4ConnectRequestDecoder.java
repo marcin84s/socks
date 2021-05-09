@@ -1,5 +1,8 @@
 package com.github.marcin84s.handler;
 
+import com.github.marcin84s.handler.msgs.Socks4ConnectNotSupportedVersion5;
+import com.github.marcin84s.handler.msgs.Socks4ConnectReject;
+import com.github.marcin84s.handler.msgs.Socks4ConnectRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -36,14 +39,20 @@ public class Socks4ConnectRequestDecoder extends ReplayingDecoder<ConnectInputSt
         switch (state()) {
             case VERSION:
                 byte version = in.readByte();
-                checkpoint(ConnectInputState.COMMAND_CODE);
-
                 if (version != 4) {
                     log.info("version != 4 -> {}", version);
+                    if (version == 5) {
+                        in.readBytes(new byte[3]);
+                        ctx.writeAndFlush(new Socks4ConnectNotSupportedVersion5());
+                        return;
+                    }
+
                     ctx.pipeline().remove(this);
                     ctx.writeAndFlush(new Socks4ConnectReject());
                     return;
                 }
+
+                checkpoint(ConnectInputState.COMMAND_CODE);
 
             case COMMAND_CODE:
                 byte command = in.readByte();
