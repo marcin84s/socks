@@ -1,5 +1,7 @@
 package com.github.marcin84s.handler;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 import java.net.InetAddress;
 
 public class Socks4ConnectRequest {
@@ -44,6 +46,14 @@ public class Socks4ConnectRequest {
         return destAddress.toString() + ":" + port;
     }
 
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this)
+                .append("destAddress", destAddress)
+                .append("port", port)
+                .append("userId", userId)
+                .toString();
+    }
 }
 
 

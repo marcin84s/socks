@@ -4,6 +4,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ReplayingDecoder;
 import org.apache.commons.lang3.Conversion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
@@ -18,6 +20,8 @@ enum ConnectInputState {
 }
 
 public class Socks4ConnectRequestDecoder extends ReplayingDecoder<ConnectInputState> {
+    public static final Logger log = LoggerFactory.getLogger(Socks4ConnectRequestDecoder.class);
+
     private static final int COMMAND_CONNECT = 1;
 
     private Socks4ConnectRequest socks4Connect;
@@ -35,8 +39,9 @@ public class Socks4ConnectRequestDecoder extends ReplayingDecoder<ConnectInputSt
                 checkpoint(ConnectInputState.COMMAND_CODE);
 
                 if (version != 4) {
-                    System.out.println("version != 4 -> " + version);
-                    ctx.close();
+                    log.info("version != 4 -> {}", version);
+                    ctx.pipeline().remove(this);
+                    ctx.writeAndFlush(new Socks4ConnectReject());
                     return;
                 }
 
@@ -45,8 +50,9 @@ public class Socks4ConnectRequestDecoder extends ReplayingDecoder<ConnectInputSt
                 checkpoint(ConnectInputState.DEST_PORT);
 
                 if (command != COMMAND_CONNECT) {
-                    System.out.println("command != 1 (CONNECT) -> " + command);
-                    ctx.close();
+                    log.info("command != 1 (CONNECT) -> {}", command);
+                    ctx.pipeline().remove(this);
+                    ctx.writeAndFlush(new Socks4ConnectReject());
                     return;
                 }
 

@@ -14,45 +14,57 @@ public class Socks4ConnectResponseHandler extends ChannelOutboundHandlerAdapter 
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        Socks4ConnectRequest connectRequest = (Socks4ConnectRequest) msg;
+        if (msg instanceof Socks4ConnectRequest) {
+            Socks4ConnectRequest connectRequest = (Socks4ConnectRequest) msg;
 
-        ChannelFuture connectChannelFuture = Netty.getBootstrap().connect(connectRequest.getDestAddress(), connectRequest.getPort());
-        connectChannelFuture.addListener(f -> {
-            if (f.isSuccess()) {
-                Channel connectChannel = connectChannelFuture.channel();
-                log.debug("connected {}", connectChannel);
+            ChannelFuture connectChannelFuture = Netty.getBootstrap().connect(connectRequest.getDestAddress(), connectRequest.getPort());
+            connectChannelFuture.addListener(f -> {
+                if (f.isSuccess()) {
+                    Channel connectChannel = connectChannelFuture.channel();
+                    log.debug("connected {}", connectChannel);
 
-                ctx.pipeline().addLast(new IncomingTrafficHandler(connectChannel));
-                connectChannel.pipeline().addLast(new IncomingTrafficHandler(ctx.channel()));
+                    ctx.pipeline().addLast(new IncomingTrafficHandler(connectChannel));
+                    connectChannel.pipeline().addLast(new IncomingTrafficHandler(ctx.channel()));
 
-                connectChannel.closeFuture().addListener(c -> {
-                    log.debug("closing {}", connectChannel);
-                    ctx.channel().close();
-                });
+                    connectChannel.closeFuture().addListener(c -> {
+                        log.debug("closing {}", connectChannel);
+                        ctx.channel().close();
+                    });
 
-                ctx.channel().closeFuture().addListener(c -> {
-                    log.debug("closing {}", ctx.channel());
-                    connectChannel.close();
-                });
+                    ctx.channel().closeFuture().addListener(c -> {
+                        log.debug("closing {}", ctx.channel());
+                        connectChannel.close();
+                    });
 
-                sendResponse(ctx, connectRequest, REPLY_COMMAND_GRANTED);
-            } else {
-                log.error("connect failure {}", connectRequest.getEndpoint());
-                f.cause().printStackTrace();
+                    sendResponse(ctx, connectRequest, REPLY_COMMAND_GRANTED);
+                } else {
+                    log.error("connect failure {}", connectRequest.getEndpoint());
+                    f.cause().printStackTrace();
 
-                sendResponse(ctx, connectRequest, REPLY_COMMAND_REJECTED);
-            }
-        });
+                    sendResponse(ctx, connectRequest, REPLY_COMMAND_REJECTED);
+                }
+            });
 
-        ctx.pipeline().remove(this);
+            ctx.pipeline().remove(this);
+        } else if (msg instanceof Socks4ConnectReject) {
+            sendResponse(ctx, null, REPLY_COMMAND_REJECTED);
+            ctx.close();
+        } else {
+            ctx.fireChannelRead(msg);
+        }
     }
 
     private void sendResponse(ChannelHandlerContext ctx, Socks4ConnectRequest connectRequest, byte command) {
         ByteBuf out = ctx.alloc().ioBuffer();
         out.writeByte(0);
         out.writeByte(command);
-        out.writeShort(connectRequest.getPort());
-        out.writeInt(connectRequest.getDestIp());
+        if(connectRequest != null) {
+            out.writeShort(connectRequest.getPort());
+            out.writeInt(connectRequest.getDestIp());
+        } else {
+            out.writeShort(0);
+            out.writeInt(0);
+        }
         ctx.writeAndFlush(out);
     }
 }
