@@ -1,7 +1,10 @@
 package com.github.marcin84s.netty;
 
+import com.github.marcin84s.handler.Socks4ConnectRequestDecoder;
+import com.github.marcin84s.handler.Socks4ConnectResponseHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -29,6 +32,17 @@ public class Netty {
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
         }
         return serverBootstrap;
+    }
+
+    public static ChannelFuture createSocks4Proxy(int port) {
+        return Netty.getServerBootstrap(new ChannelInitializer<SocketChannel>() {
+            @Override
+            public void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast(new LoggingHandler());
+                ch.pipeline().addLast(new Socks4ConnectResponseHandler());
+                ch.pipeline().addLast(new Socks4ConnectRequestDecoder());
+            }
+        }).bind(port);
     }
 
     public static synchronized Bootstrap getBootstrap() {

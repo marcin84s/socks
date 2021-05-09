@@ -20,17 +20,8 @@ public class MainSocksProxy {
         }
 
         try {
-            ServerBootstrap b = Netty.getServerBootstrap(new ChannelInitializer<SocketChannel>() {
-                @Override
-                public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new LoggingHandler());
-                    ch.pipeline().addLast(new Socks4ConnectResponseHandler());
-                    ch.pipeline().addLast(new Socks4ConnectRequestDecoder());
-                }
-            });
-
             log.debug("starting server port {}", port);
-            b.bind(port).sync().channel().closeFuture().sync();
+            Netty.createSocks4Proxy(port).sync().channel().closeFuture().sync();
         } finally {
             Netty.shutdownWorker();
         }
