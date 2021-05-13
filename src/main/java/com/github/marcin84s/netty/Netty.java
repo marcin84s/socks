@@ -22,27 +22,23 @@ public class Netty {
     private static Bootstrap bootstrap = null;
     private static ServerBootstrap serverBootstrap = null;
 
-    public static synchronized ServerBootstrap getServerBootstrap(ChannelInitializer<SocketChannel> channelInitializer) {
+    public static ChannelFuture bindSocks4Proxy(int port) {
         if (serverBootstrap == null) {
             serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(workerGroup)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(channelInitializer)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new LoggingHandler());
+                            ch.pipeline().addLast(new Socks4ConnectResponseHandler());
+                            ch.pipeline().addLast(new Socks4ConnectRequestDecoder());
+                        }
+                    })
                     .option(ChannelOption.SO_BACKLOG, 128)
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
         }
-        return serverBootstrap;
-    }
-
-    public static ChannelFuture createSocks4Proxy(int port) {
-        return Netty.getServerBootstrap(new ChannelInitializer<SocketChannel>() {
-            @Override
-            public void initChannel(SocketChannel ch) throws Exception {
-                ch.pipeline().addLast(new LoggingHandler());
-                ch.pipeline().addLast(new Socks4ConnectResponseHandler());
-                ch.pipeline().addLast(new Socks4ConnectRequestDecoder());
-            }
-        }).bind(port);
+        return serverBootstrap.bind(port);
     }
 
     public static synchronized Bootstrap getBootstrap() {

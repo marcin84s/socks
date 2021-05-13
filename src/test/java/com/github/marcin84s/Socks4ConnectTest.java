@@ -23,7 +23,7 @@ public class Socks4ConnectTest {
 
     @BeforeClass
     public static void beforeClass() throws InterruptedException {
-        Netty.createSocks4Proxy(4321).sync();
+        Netty.bindSocks4Proxy(4321).sync();
     }
 
     @AfterClass
