@@ -14,7 +14,7 @@
         <appender-ref ref="STDOUT" />
     </logger>
 
-    <logger name="com.github.marcin84s" level="DEBUG" additivity="false">
+    <logger name="com.github.marcin84s" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
 

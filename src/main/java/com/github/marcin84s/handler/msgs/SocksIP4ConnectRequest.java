@@ -4,11 +4,15 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.net.InetAddress;
 
-public class Socks4ConnectRequest {
+public class SocksIP4ConnectRequest {
+    private final int version;
     private int destIp;
     private int port;
     private String userId;
     private InetAddress destAddress;
+    public SocksIP4ConnectRequest(int version) {
+        this.version = version;
+    }
 
     public int getDestIp() {
         return destIp;
@@ -46,9 +50,14 @@ public class Socks4ConnectRequest {
         return destAddress.toString() + ":" + port;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this)
+                .append("version", version)
                 .append("destAddress", destAddress)
                 .append("port", port)
                 .append("userId", userId)

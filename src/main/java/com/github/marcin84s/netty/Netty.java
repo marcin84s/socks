@@ -1,7 +1,7 @@
 package com.github.marcin84s.netty;
 
-import com.github.marcin84s.handler.Socks4ConnectRequestDecoder;
-import com.github.marcin84s.handler.Socks4ConnectResponseHandler;
+import com.github.marcin84s.handler.SocksConnectRequestDecoder;
+import com.github.marcin84s.handler.SocksConnectResponseHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -31,8 +31,8 @@ public class Netty {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(new LoggingHandler());
-                            ch.pipeline().addLast(new Socks4ConnectResponseHandler());
-                            ch.pipeline().addLast(new Socks4ConnectRequestDecoder());
+                            ch.pipeline().addLast(new SocksConnectResponseHandler());
+                            ch.pipeline().addLast(new SocksConnectRequestDecoder());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)

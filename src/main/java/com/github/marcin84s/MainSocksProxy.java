@@ -14,7 +14,7 @@ public class MainSocksProxy {
         }
 
         try {
-            log.debug("starting server port {}", port);
+            log.info("starting server port {}", port);
             Netty.bindSocks4Proxy(port).sync().channel().closeFuture().sync();
         } finally {
             Netty.shutdownWorker();

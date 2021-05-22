@@ -1,5 +1,6 @@
 package com.github.marcin84s;
 
+import com.github.marcin84s.consts.SocksConst;
 import com.github.marcin84s.netty.Netty;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import org.junit.AfterClass;
@@ -8,15 +9,15 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URL;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.Assert.assertEquals;
 
-public class Socks4ConnectTest {
+public class SocksConnectTest {
 
     @Rule
     public final WireMockRule wiremock = new WireMockRule(8080);
@@ -39,10 +40,10 @@ public class Socks4ConnectTest {
                         .withHeader("Content-Type", "text/plain")
                         .withBody("Success")));
 
-        // WHEN
         System.setProperty("socksProxyVersion", "4");
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", 4321));
 
+        // WHEN
         URL url = new URL("http://localhost:8080/testSocks4");
         HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection(proxy);
         httpURLConnection.connect();
@@ -58,18 +59,18 @@ public class Socks4ConnectTest {
     }
 
     @Test
-    public void socks4connectShouldWorkAfterDowngradeFrom5() throws InterruptedException, IOException {
+    public void socks5connectShouldWork() throws InterruptedException, IOException {
         // GIVEN
-        stubFor(get(urlEqualTo("/testSocks4Downgrade"))
+        stubFor(get(urlEqualTo("/testSocks5"))
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "text/plain")
                         .withBody("Success")));
 
-        // WHEN
-        System.clearProperty("socksProxyVersion");
+        System.setProperty("socksProxyVersion", "5");
         Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("localhost", 4321));
 
-        URL url = new URL("http://localhost:8080/testSocks4Downgrade");
+        // WHEN
+        URL url = new URL("http://localhost:8080/testSocks5");
         HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection(proxy);
         httpURLConnection.connect();
 
